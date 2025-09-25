@@ -1,7 +1,6 @@
 package tmux
 
 import (
-	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strconv"

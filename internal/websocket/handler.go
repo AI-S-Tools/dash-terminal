@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -206,13 +207,77 @@ func (h *Handler) handlePaneSelect(conn *websocket.Conn, msg *Message) {
 }
 
 func (h *Handler) handleTerminalInput(conn *websocket.Conn, msg *Message) {
-	// TODO: T2.3 will implement terminal input handling
-	h.sendError(conn, 501, "Terminal input not yet implemented")
+	var input TerminalInput
+	if err := h.parseMessagePayload(msg, &input); err != nil {
+		h.sendError(conn, 400, "Invalid terminal input: "+err.Error())
+		return
+	}
+
+	// Get active session for this connection
+	h.mutex.RLock()
+	sessionID, exists := h.activeSessions[conn]
+	h.mutex.RUnlock()
+
+	if !exists {
+		h.sendError(conn, 400, "No active terminal session")
+		return
+	}
+
+	// Get PTY session
+	session, ok := h.ptyTerminal.GetSession(sessionID)
+	if !ok {
+		h.sendError(conn, 404, "Terminal session not found")
+		return
+	}
+
+	// Write input to PTY
+	_, err := session.Write([]byte(input.Data))
+	if err != nil {
+		h.sendError(conn, 500, "Failed to write to terminal: "+err.Error())
+		return
+	}
 }
 
 func (h *Handler) handleTerminalResize(conn *websocket.Conn, msg *Message) {
-	// TODO: T2.3 will implement terminal resize handling
-	h.sendError(conn, 501, "Terminal resize not yet implemented")
+	var resize TerminalResize
+	if err := h.parseMessagePayload(msg, &resize); err != nil {
+		h.sendError(conn, 400, "Invalid terminal resize: "+err.Error())
+		return
+	}
+
+	// Get active session for this connection
+	h.mutex.RLock()
+	sessionID, exists := h.activeSessions[conn]
+	h.mutex.RUnlock()
+
+	if !exists {
+		h.sendError(conn, 400, "No active terminal session")
+		return
+	}
+
+	// Get PTY session
+	session, ok := h.ptyTerminal.GetSession(sessionID)
+	if !ok {
+		h.sendError(conn, 404, "Terminal session not found")
+		return
+	}
+
+	// Resize PTY
+	err := session.Resize(resize.Width, resize.Height)
+	if err != nil {
+		h.sendError(conn, 500, "Failed to resize terminal: "+err.Error())
+		return
+	}
+
+	// Send success response
+	response := Message{
+		Type: MessageTypeStatus,
+		Payload: StatusMessage{
+			Connected: true,
+			Message:   fmt.Sprintf("Terminal resized to %dx%d", resize.Width, resize.Height),
+		},
+	}
+	conn.WriteJSON(response)
 }
 
 // LXC container handlers
@@ -252,13 +317,30 @@ func (h *Handler) handleContainerSelect(conn *websocket.Conn, msg *Message) {
 		return
 	}
 
-	// For T2.2, we just confirm selection is valid
-	// Actual connection will be handled in T2.3/T2.4
+	// Start terminal session in selected container
+	sessionID := fmt.Sprintf("conn_%p", conn)
+
+	// Start PTY session with bash in the container
+	session, err := h.ptyTerminal.StartSession(sessionID, selectMsg.ContainerName, "bash")
+	if err != nil {
+		h.sendError(conn, 500, "Failed to start terminal session: "+err.Error())
+		return
+	}
+
+	// Register active session
+	h.mutex.Lock()
+	h.activeSessions[conn] = sessionID
+	h.mutex.Unlock()
+
+	// Start reading from PTY and sending to WebSocket
+	go h.pipeTerminalOutput(conn, session)
+
+	// Send success response
 	response := Message{
 		Type: MessageTypeStatus,
 		Payload: StatusMessage{
 			Connected: true,
-			Message:   "Container " + selectMsg.ContainerName + " selected successfully",
+			Message:   "Terminal session started in container " + selectMsg.ContainerName,
 		},
 	}
 	conn.WriteJSON(response)
@@ -294,6 +376,47 @@ func (h *Handler) parseMessagePayload(msg *Message, target interface{}) error {
 		return err
 	}
 	return json.Unmarshal(payloadBytes, target)
+}
+
+// pipeTerminalOutput continuously reads from PTY and sends to WebSocket
+func (h *Handler) pipeTerminalOutput(conn *websocket.Conn, session *pty.Session) {
+	buffer := make([]byte, 1024)
+
+	for session.IsRunning() {
+		n, err := session.Read(buffer)
+		if err != nil {
+			if err != io.EOF {
+				log.Printf("Error reading from PTY: %v", err)
+			}
+			break
+		}
+
+		if n > 0 {
+			// Send terminal output to WebSocket
+			outputMsg := Message{
+				Type: MessageTypeTerminalOutput,
+				Payload: TerminalOutput{
+					PaneID: "main", // T3.x will implement proper pane management
+					Data:   string(buffer[:n]),
+				},
+			}
+
+			if err := conn.WriteJSON(outputMsg); err != nil {
+				log.Printf("Error sending terminal output to WebSocket: %v", err)
+				break
+			}
+		}
+	}
+
+	// Session ended - notify client
+	statusMsg := Message{
+		Type: MessageTypeStatus,
+		Payload: StatusMessage{
+			Connected: false,
+			Message:   "Terminal session ended",
+		},
+	}
+	conn.WriteJSON(statusMsg)
 }
 
 // sendError sends an error message to the client
