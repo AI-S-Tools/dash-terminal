@@ -113,6 +113,12 @@ All testing and verification must use the Tailscale HTTPS endpoints.
 - **T3.1 Session Tab Component** - JavaScript session tab interactivity with unified touch/click
 - **T3.2 Window Tab Component** - JavaScript window tab functionality with session coordination
 
+**🚨 ACTIVE BUG FIX:**
+- **T3.X Terminal Connection Bug** - Missing container selection breaks terminal functionality
+- **Branch:** terminal-connection-fix
+- **Chosen Solution:** Advanced container selection UI (mobile-friendly)
+- **Status:** Ready to implement proper container selection interface
+
 **📝 PATTERN ESTABLISHED:**
 - Event-driven architecture with custom events (sessionSelect, windowSelect, etc.)
 - Unified touch/click handlers prevent mobile/desktop code duplication
