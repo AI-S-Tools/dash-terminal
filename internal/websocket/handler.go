@@ -21,8 +21,8 @@ var upgrader = websocket.Upgrader{
 // Client represents a connected WebSocket client and its state
 type Client struct {
 	conn          *websocket.Conn
-	containerName string
-	sessionName   string
+	containerID   string
+	sessionID     string
 	ptySession    *pty.Session
 }
 
