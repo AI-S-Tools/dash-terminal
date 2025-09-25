@@ -16,9 +16,10 @@ body {
 /* iOS Safe Areas */
 .terminal-app {
     height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
     flex-direction: column;
-    padding-top: env(safe-area-inset-top);
+    padding-top: max(env(safe-area-inset-top), 8px); /* Minimum 8px from top */
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
