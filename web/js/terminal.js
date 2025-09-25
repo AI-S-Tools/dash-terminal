@@ -199,11 +199,33 @@ class DashTerminal {
 document.addEventListener('DOMContentLoaded', () => {
     const dashTerminal = new DashTerminal();
 
+    // Initialize session tabs
+    const sessionTabs = new SessionTabs();
+    sessionTabs.enableMobileOptimizations();
+
+    // Handle session tab events
+    document.addEventListener('sessionSelect', (event) => {
+        const { sessionName } = event.detail;
+        console.log(`Terminal: Session selected: ${sessionName}`);
+
+        // TODO: T3.1 scope - just log for now, T3.2+ will implement session switching
+        dashTerminal.terminal.write(`\r\n🔄 Session switched to: ${sessionName}\r\n`);
+    });
+
+    document.addEventListener('sessionCreate', (event) => {
+        const { sessionName } = event.detail;
+        console.log(`Terminal: Session creation requested: ${sessionName}`);
+
+        // TODO: T3.1 scope - just log for now, backend integration needed
+        dashTerminal.terminal.write(`\r\n➕ Session creation requested: ${sessionName}\r\n`);
+    });
+
     // Handle window resize
     window.addEventListener('resize', () => {
         dashTerminal.resize();
     });
 
-    // Make terminal available globally for debugging
+    // Make terminal and session tabs available globally
     window.dashTerminal = dashTerminal;
+    window.sessionTabs = sessionTabs;
 });
