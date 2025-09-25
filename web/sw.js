@@ -1,9 +1,10 @@
-const CACHE_NAME = 'lxc-terminal-v2'; // Updated for session-tabs.js and responsive fixes
+const CACHE_NAME = 'lxc-terminal-v3'; // Updated for window-tabs.js T3.2
 const urlsToCache = [
   '/',
   '/css/tmux-ui.css',
   '/js/terminal.js',
-  '/js/session-tabs.js', // Added session tabs
+  '/js/session-tabs.js', // T3.1 session tabs
+  '/js/window-tabs.js', // T3.2 window tabs
   '/assets/icons/icon-192x192.png'
 ];
 
