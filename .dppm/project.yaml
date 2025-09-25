@@ -1,0 +1,99 @@
+name: dash-terminal
+version: 1.0.0
+description: Terminal-based developer dashboard with system monitoring and productivity tools
+type: terminal-application
+
+metadata:
+  author: Dev Team
+  license: MIT
+  repository: https://github.com/user/dash-terminal
+  homepage: https://dash-terminal.dev
+
+dependencies:
+  runtime:
+    - nodejs: ">=18.0.0"
+    - npm: ">=9.0.0"
+
+  packages:
+    - blessed: "^0.1.81"
+    - blessed-contrib: "^4.11.0"
+    - chalk: "^5.3.0"
+    - systeminformation: "^5.21.0"
+    - node-fetch: "^3.3.2"
+    - dotenv: "^16.3.1"
+
+scripts:
+  start: "node src/index.js"
+  dev: "node --watch src/index.js"
+  build: "npm run lint && npm test"
+  test: "node --test"
+  lint: "eslint src/"
+
+structure:
+  src:
+    - index.js: Main entry point
+    - dashboard.js: Dashboard controller
+    - widgets/:
+      - system.js: System monitoring widget
+      - tasks.js: Task management widget
+      - git.js: Git repository status widget
+      - network.js: Network monitoring widget
+      - logs.js: Log viewer widget
+    - utils/:
+      - config.js: Configuration loader
+      - theme.js: Theme management
+      - data.js: Data fetching utilities
+
+  config:
+    - default.yaml: Default configuration
+    - themes/:
+      - dark.yaml: Dark theme
+      - light.yaml: Light theme
+      - cyberpunk.yaml: Cyberpunk theme
+
+  tests:
+    - dashboard.test.js: Dashboard tests
+    - widgets.test.js: Widget tests
+
+features:
+  - Real-time system monitoring (CPU, Memory, Disk, Network)
+  - Git repository status and branch information
+  - Task/TODO management with persistence
+  - Log file monitoring and filtering
+  - Customizable themes and layouts
+  - Keyboard shortcuts for navigation
+  - API monitoring and health checks
+  - Weather information widget
+  - Docker container status
+  - Process monitoring
+
+configuration:
+  layout:
+    grid: true
+    columns: 12
+    rows: 12
+
+  refresh_rates:
+    system: 1000
+    network: 2000
+    git: 5000
+    weather: 600000
+
+  shortcuts:
+    quit: "q"
+    help: "h"
+    refresh: "r"
+    theme_toggle: "t"
+    focus_next: "tab"
+    focus_previous: "shift+tab"
+
+environment:
+  DPPM_THEME: dark
+  DPPM_LOG_LEVEL: info
+  DPPM_CONFIG_PATH: ./config/default.yaml
+  DPPM_DATA_DIR: ~/.dppm/dash-terminal
+
+build:
+  output: dist/
+  minify: false
+  sourcemaps: true
