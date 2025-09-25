@@ -4,27 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LXC Terminal PWA</title>
-    <meta name="description" content="LXC Terminal PWA with native tmux integration">
-
-    <!-- PWA features will be added in T1.2 -->
-    <!-- <link rel="manifest" href="manifest.json"> -->
-
-    <!-- CSS styling will be added in T1.3 -->
-    <!-- <link rel="stylesheet" href="css/tmux-ui.css"> -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <link rel="icon" href="assets/icons/icon-192x192.png">
 </head>
 <body>
-    <div id="app">
-        <h1>LXC Terminal PWA</h1>
-        <p>Foundation setup complete - T1.1 ✓</p>
-        <p>Next: T1.2 PWA Foundation</p>
+    <h1>LXC Terminal PWA - Ready for Installation</h1>
+    <p>PWA foundation complete. Terminal functionality coming in T2.3.</p>
 
-        <!-- Terminal interface will be implemented in T2.3 -->
-        <div id="terminal-container">
-            <p>Terminal integration pending - T2.3</p>
-        </div>
-    </div>
-
-    <!-- JavaScript functionality will be added in T2.3 -->
-    <!-- <script src="js/terminal.js"></script> -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
 </body>
 </html>
