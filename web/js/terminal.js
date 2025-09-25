@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const windowTabs = new WindowTabs();
     windowTabs.enableMobileOptimizations();
 
-    // Handle session tab events
+    // Handle session tab events - send WebSocket message for real tmux session switching
     document.addEventListener('sessionSelect', (event) => {
         const { sessionName } = event.detail;
         console.log(`Terminal: Session selected: ${sessionName}`);
@@ -247,8 +247,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update window tabs with current session
         windowTabs.setCurrentSession(sessionName);
 
-        // TODO: T3.1 scope - just log for now, T3.2+ will implement session switching
-        dashTerminal.terminal.write(`\r\n🔄 Session switched to: ${sessionName}\r\n`);
+        // Send session_select WebSocket message to backend
+        if (dashTerminal.connected && dashTerminal.websocket) {
+            const message = {
+                type: 'session_select',
+                payload: {
+                    name: sessionName
+                }
+            };
+            dashTerminal.websocket.send(JSON.stringify(message));
+            dashTerminal.terminal.write(`\r\n🔄 Switching to tmux session: ${sessionName}\r\n`);
+        } else {
+            dashTerminal.terminal.write(`\r\n❌ Cannot switch session - WebSocket not connected\r\n`);
+        }
     });
 
     document.addEventListener('sessionCreate', (event) => {

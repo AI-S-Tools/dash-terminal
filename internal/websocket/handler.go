@@ -152,7 +152,7 @@ func (h *Handler) handleConnect(conn *websocket.Conn) {
 func (h *Handler) handleSessionList(conn *websocket.Conn) {
 	// Get current container for this connection
 	h.mutex.RLock()
-	sessionID, exists := h.activeSessions[conn]
+	_, exists := h.activeSessions[conn]
 	h.mutex.RUnlock()
 
 	var containerName string
@@ -204,9 +204,8 @@ func (h *Handler) handleSessionCreate(conn *websocket.Conn, msg *Message) {
 	// Get current container
 	var containerName string
 	h.mutex.RLock()
-	if sessionID, exists := h.activeSessions[conn]; exists {
+	if _, exists := h.activeSessions[conn]; exists {
 		containerName = "" // Host terminal for now
-		_ = sessionID
 	}
 	h.mutex.RUnlock()
 
@@ -247,9 +246,8 @@ func (h *Handler) handleSessionSelect(conn *websocket.Conn, msg *Message) {
 	// Get current container
 	var containerName string
 	h.mutex.RLock()
-	if sessionID, exists := h.activeSessions[conn]; exists {
+	if _, exists := h.activeSessions[conn]; exists {
 		containerName = "" // Host terminal for now
-		_ = sessionID
 	}
 	h.mutex.RUnlock()
 
@@ -290,9 +288,8 @@ func (h *Handler) handleWindowList(conn *websocket.Conn, msg *Message) {
 	// Get current container
 	var containerName string
 	h.mutex.RLock()
-	if sessionID, exists := h.activeSessions[conn]; exists {
+	if _, exists := h.activeSessions[conn]; exists {
 		containerName = "" // Host terminal for now
-		_ = sessionID
 	}
 	h.mutex.RUnlock()
 
@@ -359,9 +356,8 @@ func (h *Handler) handleWindowCreate(conn *websocket.Conn, msg *Message) {
 	// Get current container
 	var containerName string
 	h.mutex.RLock()
-	if sessionID, exists := h.activeSessions[conn]; exists {
+	if _, exists := h.activeSessions[conn]; exists {
 		containerName = "" // Host terminal for now
-		_ = sessionID
 	}
 	h.mutex.RUnlock()
 
