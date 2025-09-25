@@ -27,13 +27,28 @@ class SessionTabs {
             return;
         }
 
-        // Event delegation for session tabs
-        sessionTabsContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('session-tab')) {
-                this.handleSessionTabClick(e.target);
-            } else if (e.target.classList.contains('session-add')) {
-                this.handleAddSessionClick(e.target);
+        // Unified interaction handler for both click and touch
+        const handleInteraction = (e) => {
+            // Prevent default behavior and event bubbling
+            e.preventDefault();
+            e.stopPropagation();
+
+            const target = e.target;
+            console.log(`SessionTabs: ${e.type} on ${target.className}:`, target.textContent);
+
+            if (target.classList.contains('session-tab')) {
+                this.handleSessionTabClick(target);
+            } else if (target.classList.contains('session-add')) {
+                this.handleAddSessionClick(target);
             }
+        };
+
+        // Use touchstart for mobile (fires before click) and click as fallback
+        sessionTabsContainer.addEventListener('touchstart', handleInteraction, { passive: false });
+        sessionTabsContainer.addEventListener('click', (e) => {
+            // Only handle click if it wasn't already handled by touch
+            if (e.type === 'click' && !e.isTrusted) return;
+            handleInteraction(e);
         });
     }
 
@@ -143,25 +158,17 @@ class SessionTabs {
         // Enable smooth scrolling for tab overflow
         sessionTabsContainer.style.scrollBehavior = 'smooth';
 
-        // Add touch feedback with preventDefault to avoid iOS click issues
-        sessionTabsContainer.addEventListener('touchstart', (e) => {
-            if (e.target.classList.contains('session-tab') || e.target.classList.contains('session-add')) {
-                e.target.style.opacity = '0.7';
-                console.log('TouchStart on:', e.target.textContent);
-            }
-        }, { passive: false });
-
+        // Simple touch feedback without interfering with main touch handler
         sessionTabsContainer.addEventListener('touchend', (e) => {
             if (e.target.classList.contains('session-tab') || e.target.classList.contains('session-add')) {
-                e.target.style.opacity = '1';
-                console.log('TouchEnd on:', e.target.textContent);
-
-                // Trigger click manually on iOS
+                // Visual feedback
+                e.target.style.opacity = '0.7';
                 setTimeout(() => {
-                    e.target.click();
-                }, 10);
+                    e.target.style.opacity = '1';
+                }, 150);
+                console.log('Touch feedback on:', e.target.textContent);
             }
-        }, { passive: false });
+        });
 
         // iOS Safari specific - prevent double tap zoom
         sessionTabsContainer.style.touchAction = 'manipulation';
