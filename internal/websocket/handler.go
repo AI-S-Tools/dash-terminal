@@ -93,10 +93,30 @@ func (h *Handler) handleMessage(client *Client, msg *Message) {
 		h.handleContainerList(client)
 	case MessageTypeSessionList:
 		h.handleSessionList(client, msg)
-	// Add other message handlers here based on t2-1_task_description.yaml
-	// For now, we will add placeholders
-	case MessageTypeSessionCreate, MessageTypeSessionSelect, MessageTypeWindowList, MessageTypeWindowCreate, MessageTypeWindowSelect, MessageTypePaneList, MessageTypePaneCreate, MessageTypePaneSelect, MessageTypeTerminalInput, MessageTypeTerminalResize, MessageTypeContainerSelect, MessageTypeContainerInfo:
-		h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	case MessageTypeSessionCreate:
+		h.handleSessionCreate(client, msg)
+	case MessageTypeSessionSelect:
+		h.handleSessionSelect(client, msg)
+	case MessageTypeWindowList:
+		h.handleWindowList(client, msg)
+	case MessageTypeWindowCreate:
+		h.handleWindowCreate(client, msg)
+	case MessageTypeWindowSelect:
+		h.handleWindowSelect(client, msg)
+	case MessageTypePaneList:
+		h.handlePaneList(client, msg)
+	case MessageTypePaneCreate:
+		h.handlePaneCreate(client, msg)
+	case MessageTypePaneSelect:
+		h.handlePaneSelect(client, msg)
+	case MessageTypeTerminalInput:
+		h.handleTerminalInput(client, msg)
+	case MessageTypeTerminalResize:
+		h.handleTerminalResize(client, msg)
+	case MessageTypeContainerSelect:
+		h.handleContainerSelect(client, msg)
+	case MessageTypeContainerInfo:
+		h.handleContainerInfo(client, msg)
 	default:
 		h.sendError(client, 400, "Unknown message type: "+msg.Type)
 	}
@@ -149,6 +169,55 @@ func (h *Handler) handleSessionList(client *Client, msg *Message) {
 	response := Message{Type: MessageTypeSessionList, Payload: wsSessions}
 	client.conn.WriteJSON(response)
 }
+
+func (h *Handler) handleSessionCreate(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handleSessionSelect(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handleWindowList(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handleWindowCreate(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handleWindowSelect(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handlePaneList(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handlePaneCreate(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handlePaneSelect(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handleTerminalInput(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handleTerminalResize(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handleContainerSelect(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
+func (h *Handler) handleContainerInfo(client *Client, msg *Message) {
+	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+}
+
 
 // --- Utility Functions ---
 
