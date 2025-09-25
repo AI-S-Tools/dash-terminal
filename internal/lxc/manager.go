@@ -56,6 +56,11 @@ func (m *Manager) ListContainers() ([]Container, error) {
 		})
 	}
 
+	// If no containers found, return mock containers for development
+	if len(containers) == 0 {
+		return m.getMockContainers(), nil
+	}
+
 	return containers, nil
 }
 
