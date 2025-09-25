@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lxc-terminal-v4'; // Updated for terminal connection fix
+const CACHE_NAME = 'lxc-terminal-v5'; // Fixed Terminal class availability
 const urlsToCache = [
   '/',
   '/css/tmux-ui.css',

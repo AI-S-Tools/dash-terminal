@@ -15,6 +15,12 @@ class DashTerminal {
     }
 
     initTerminal() {
+        // Ensure xterm.js Terminal class is available
+        if (typeof Terminal === 'undefined') {
+            console.error('Terminal class not found - xterm.js may not be loaded');
+            return;
+        }
+
         // Create xterm.js terminal instance
         this.terminal = new Terminal({
             theme: {
