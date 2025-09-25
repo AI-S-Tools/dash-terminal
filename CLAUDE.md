@@ -107,6 +107,18 @@ All testing and verification must use the Tailscale HTTPS endpoints.
 - **Mobile Testing**: PWA updates require cache invalidation or reinstall to see changes
 - **Responsive Safe Areas**: Use `100dvh` and `max(env(safe-area-inset-top), 8px)` for mobile viewport
 
+## Phase 3 Progress Tracking
+
+**✅ COMPLETED:**
+- **T3.1 Session Tab Component** - JavaScript session tab interactivity with unified touch/click
+- **T3.2 Window Tab Component** - JavaScript window tab functionality with session coordination
+
+**📝 PATTERN ESTABLISHED:**
+- Event-driven architecture with custom events (sessionSelect, windowSelect, etc.)
+- Unified touch/click handlers prevent mobile/desktop code duplication
+- Mobile optimizations with touch feedback and smooth scrolling
+- PWA cache versioning (v1→v2→v3) for proper mobile updates
+
 ## MVP Scope Boundaries
 
 **Included:**
