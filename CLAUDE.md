@@ -100,6 +100,13 @@ All testing and verification must use the Tailscale HTTPS endpoints.
 - Follow the three-level tmux UI system: Sessions → Windows → Panes
 - Performance targets: Sub-50ms terminal response, <200ms session switching, 60fps animations, <2MB PWA size
 
+## Critical Mobile Development Rules
+
+- **Touch + Click Unity**: NEVER code touch and click separately - use unified event handlers
+- **PWA Cache Versioning**: ALWAYS bump cache version in sw.js when updating JavaScript/CSS
+- **Mobile Testing**: PWA updates require cache invalidation or reinstall to see changes
+- **Responsive Safe Areas**: Use `100dvh` and `max(env(safe-area-inset-top), 8px)` for mobile viewport
+
 ## MVP Scope Boundaries
 
 **Included:**

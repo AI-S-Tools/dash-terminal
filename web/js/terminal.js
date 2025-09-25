@@ -203,10 +203,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const sessionTabs = new SessionTabs();
     sessionTabs.enableMobileOptimizations();
 
+    // Initialize window tabs
+    const windowTabs = new WindowTabs();
+    windowTabs.enableMobileOptimizations();
+
     // Handle session tab events
     document.addEventListener('sessionSelect', (event) => {
         const { sessionName } = event.detail;
         console.log(`Terminal: Session selected: ${sessionName}`);
+
+        // Update window tabs with current session
+        windowTabs.setCurrentSession(sessionName);
 
         // TODO: T3.1 scope - just log for now, T3.2+ will implement session switching
         dashTerminal.terminal.write(`\r\n🔄 Session switched to: ${sessionName}\r\n`);
@@ -216,8 +223,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const { sessionName } = event.detail;
         console.log(`Terminal: Session creation requested: ${sessionName}`);
 
+        // Reset windows for new session (optional behavior)
+        // windowTabs.resetWindowsForSession(sessionName);
+
         // TODO: T3.1 scope - just log for now, backend integration needed
         dashTerminal.terminal.write(`\r\n➕ Session creation requested: ${sessionName}\r\n`);
+    });
+
+    // Handle window tab events
+    document.addEventListener('windowSelect', (event) => {
+        const { windowName, sessionName } = event.detail;
+        console.log(`Terminal: Window selected: ${windowName} in session: ${sessionName}`);
+
+        // TODO: T3.2 scope - just log for now, backend integration in T3.3+
+        dashTerminal.terminal.write(`\r\n🪟 Window switched to: ${windowName}\r\n`);
+    });
+
+    document.addEventListener('windowCreate', (event) => {
+        const { windowName, sessionName } = event.detail;
+        console.log(`Terminal: Window creation requested: ${windowName} in session: ${sessionName}`);
+
+        // TODO: T3.2 scope - just log for now, backend integration needed
+        dashTerminal.terminal.write(`\r\n➕ Window creation requested: ${windowName}\r\n`);
     });
 
     // Handle window resize
@@ -225,7 +252,8 @@ document.addEventListener('DOMContentLoaded', () => {
         dashTerminal.resize();
     });
 
-    // Make terminal and session tabs available globally
+    // Make terminal and tab components available globally
     window.dashTerminal = dashTerminal;
     window.sessionTabs = sessionTabs;
+    window.windowTabs = windowTabs;
 });
