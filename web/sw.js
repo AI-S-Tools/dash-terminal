@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lxc-terminal-v5'; // Fixed Terminal class availability
+const CACHE_NAME = 'lxc-terminal-v6'; // Fixed Terminal class with window.Terminal
 const urlsToCache = [
   '/',
   '/css/tmux-ui.css',

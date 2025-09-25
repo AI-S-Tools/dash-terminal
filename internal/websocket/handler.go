@@ -148,38 +148,242 @@ func (h *Handler) handleConnect(conn *websocket.Conn) {
 	conn.WriteJSON(response)
 }
 
-// Placeholder handlers for T2.2+ implementation
+// handleSessionList handles session list requests - lists tmux sessions
 func (h *Handler) handleSessionList(conn *websocket.Conn) {
-	// TODO: T2.4 will implement actual tmux session listing
+	// Get current container for this connection
+	h.mutex.RLock()
+	sessionID, exists := h.activeSessions[conn]
+	h.mutex.RUnlock()
+
+	var containerName string
+	if exists {
+		// Extract container name from existing session
+		// For now, we'll use empty string for host or extract from sessionID if needed
+		containerName = "" // Host terminal
+	}
+
+	// Get or create tmux manager for this container
+	tmuxManager := h.getTmuxManager(containerName)
+
+	// List tmux sessions
+	sessions, err := tmuxManager.ListSessions()
+	if err != nil {
+		h.sendError(conn, 500, "Failed to list tmux sessions: "+err.Error())
+		return
+	}
+
+	// Convert tmux.Session to websocket.Session format
+	wsSessions := make([]Session, len(sessions))
+	for i, session := range sessions {
+		wsSessions[i] = Session{
+			ID:   session.Name,
+			Name: session.Name,
+		}
+	}
+
 	response := Message{
 		Type:    MessageTypeSessionList,
-		Payload: []Session{},
+		Payload: wsSessions,
 	}
 	conn.WriteJSON(response)
 }
 
 func (h *Handler) handleSessionCreate(conn *websocket.Conn, msg *Message) {
-	// TODO: T2.4 will implement session creation
-	h.sendError(conn, 501, "Session creation not yet implemented")
+	var sessionMsg map[string]interface{}
+	if err := h.parseMessagePayload(msg, &sessionMsg); err != nil {
+		h.sendError(conn, 400, "Invalid session create message: "+err.Error())
+		return
+	}
+
+	sessionName, ok := sessionMsg["name"].(string)
+	if !ok || sessionName == "" {
+		h.sendError(conn, 400, "Session name is required")
+		return
+	}
+
+	// Get current container
+	var containerName string
+	h.mutex.RLock()
+	if sessionID, exists := h.activeSessions[conn]; exists {
+		containerName = "" // Host terminal for now
+		_ = sessionID
+	}
+	h.mutex.RUnlock()
+
+	// Get tmux manager
+	tmuxManager := h.getTmuxManager(containerName)
+
+	// Create tmux session
+	err := tmuxManager.CreateSession(sessionName)
+	if err != nil {
+		h.sendError(conn, 500, "Failed to create tmux session: "+err.Error())
+		return
+	}
+
+	// Send success response
+	response := Message{
+		Type: MessageTypeStatus,
+		Payload: StatusMessage{
+			Connected: true,
+			Message:   "Tmux session created: " + sessionName,
+		},
+	}
+	conn.WriteJSON(response)
 }
 
 func (h *Handler) handleSessionSelect(conn *websocket.Conn, msg *Message) {
-	// TODO: T2.4 will implement session selection
-	h.sendError(conn, 501, "Session selection not yet implemented")
+	var sessionMsg map[string]interface{}
+	if err := h.parseMessagePayload(msg, &sessionMsg); err != nil {
+		h.sendError(conn, 400, "Invalid session select message: "+err.Error())
+		return
+	}
+
+	sessionName, ok := sessionMsg["name"].(string)
+	if !ok || sessionName == "" {
+		h.sendError(conn, 400, "Session name is required")
+		return
+	}
+
+	// Get current container
+	var containerName string
+	h.mutex.RLock()
+	if sessionID, exists := h.activeSessions[conn]; exists {
+		containerName = "" // Host terminal for now
+		_ = sessionID
+	}
+	h.mutex.RUnlock()
+
+	// Get tmux manager
+	tmuxManager := h.getTmuxManager(containerName)
+
+	// Select tmux session
+	err := tmuxManager.SelectSession(sessionName)
+	if err != nil {
+		h.sendError(conn, 500, "Failed to select tmux session: "+err.Error())
+		return
+	}
+
+	// Send success response
+	response := Message{
+		Type: MessageTypeStatus,
+		Payload: StatusMessage{
+			Connected: true,
+			Message:   "Tmux session selected: " + sessionName,
+		},
+	}
+	conn.WriteJSON(response)
 }
 
 func (h *Handler) handleWindowList(conn *websocket.Conn, msg *Message) {
-	// TODO: T2.4 will implement window listing
+	var windowMsg map[string]interface{}
+	if err := h.parseMessagePayload(msg, &windowMsg); err != nil {
+		h.sendError(conn, 400, "Invalid window list message: "+err.Error())
+		return
+	}
+
+	sessionName, ok := windowMsg["session_name"].(string)
+	if !ok || sessionName == "" {
+		h.sendError(conn, 400, "Session name is required")
+		return
+	}
+
+	// Get current container
+	var containerName string
+	h.mutex.RLock()
+	if sessionID, exists := h.activeSessions[conn]; exists {
+		containerName = "" // Host terminal for now
+		_ = sessionID
+	}
+	h.mutex.RUnlock()
+
+	// Get tmux manager
+	tmuxManager := h.getTmuxManager(containerName)
+
+	// List windows for session
+	sessions, err := tmuxManager.ListSessions()
+	if err != nil {
+		h.sendError(conn, 500, "Failed to list tmux sessions: "+err.Error())
+		return
+	}
+
+	// Find the specific session
+	var targetSession *tmux.Session
+	for i, session := range sessions {
+		if session.Name == sessionName {
+			targetSession = &sessions[i]
+			break
+		}
+	}
+
+	if targetSession == nil {
+		h.sendError(conn, 404, "Session not found: "+sessionName)
+		return
+	}
+
+	// Convert tmux.Window to websocket.Window format
+	wsWindows := make([]Window, len(targetSession.Windows))
+	for i, window := range targetSession.Windows {
+		wsWindows[i] = Window{
+			ID:        fmt.Sprintf("%d", window.ID),
+			Name:      window.Name,
+			SessionID: sessionName,
+		}
+	}
+
 	response := Message{
 		Type:    MessageTypeWindowList,
-		Payload: []Window{},
+		Payload: wsWindows,
 	}
 	conn.WriteJSON(response)
 }
 
 func (h *Handler) handleWindowCreate(conn *websocket.Conn, msg *Message) {
-	// TODO: T2.4 will implement window creation
-	h.sendError(conn, 501, "Window creation not yet implemented")
+	var windowMsg map[string]interface{}
+	if err := h.parseMessagePayload(msg, &windowMsg); err != nil {
+		h.sendError(conn, 400, "Invalid window create message: "+err.Error())
+		return
+	}
+
+	sessionName, ok := windowMsg["session_name"].(string)
+	if !ok || sessionName == "" {
+		h.sendError(conn, 400, "Session name is required")
+		return
+	}
+
+	windowName, ok := windowMsg["window_name"].(string)
+	if !ok || windowName == "" {
+		h.sendError(conn, 400, "Window name is required")
+		return
+	}
+
+	// Get current container
+	var containerName string
+	h.mutex.RLock()
+	if sessionID, exists := h.activeSessions[conn]; exists {
+		containerName = "" // Host terminal for now
+		_ = sessionID
+	}
+	h.mutex.RUnlock()
+
+	// Get tmux manager
+	tmuxManager := h.getTmuxManager(containerName)
+
+	// Create tmux window
+	err := tmuxManager.CreateWindow(sessionName, windowName)
+	if err != nil {
+		h.sendError(conn, 500, "Failed to create tmux window: "+err.Error())
+		return
+	}
+
+	// Send success response
+	response := Message{
+		Type: MessageTypeStatus,
+		Payload: StatusMessage{
+			Connected: true,
+			Message:   fmt.Sprintf("Tmux window created: %s in session %s", windowName, sessionName),
+		},
+	}
+	conn.WriteJSON(response)
 }
 
 func (h *Handler) handleWindowSelect(conn *websocket.Conn, msg *Message) {
@@ -417,6 +621,21 @@ func (h *Handler) pipeTerminalOutput(conn *websocket.Conn, session *pty.Session)
 		},
 	}
 	conn.WriteJSON(statusMsg)
+}
+
+// getTmuxManager returns tmux manager for container, creating if needed
+func (h *Handler) getTmuxManager(containerName string) *tmux.Manager {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	if manager, exists := h.tmuxManagers[containerName]; exists {
+		return manager
+	}
+
+	// Create new tmux manager for this container
+	manager := tmux.NewManager(containerName)
+	h.tmuxManagers[containerName] = manager
+	return manager
 }
 
 // sendError sends an error message to the client

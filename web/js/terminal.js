@@ -16,13 +16,14 @@ class DashTerminal {
 
     initTerminal() {
         // Ensure xterm.js Terminal class is available
-        if (typeof Terminal === 'undefined') {
+        const TerminalClass = window.Terminal || Terminal;
+        if (typeof TerminalClass === 'undefined') {
             console.error('Terminal class not found - xterm.js may not be loaded');
             return;
         }
 
         // Create xterm.js terminal instance
-        this.terminal = new Terminal({
+        this.terminal = new TerminalClass({
             theme: {
                 background: '#1a1a1a',
                 foreground: '#ffffff',
@@ -225,6 +226,9 @@ class DashTerminal {
 
 // Initialize terminal when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 DOM loaded, checking Terminal class:', typeof Terminal);
+    console.log('🚀 Window.Terminal:', typeof window.Terminal);
+
     const dashTerminal = new DashTerminal();
 
     // Initialize session tabs
