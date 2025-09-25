@@ -6,6 +6,7 @@
     <title>LXC Terminal PWA</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/tmux-ui.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
     <meta name="theme-color" content="#1a1a1a">
     <link rel="icon" href="assets/icons/icon-192x192.png">
 </head>
@@ -28,9 +29,7 @@
         <!-- Level 3: Pane Grid -->
         <div class="pane-container">
             <div class="pane active">
-                <div class="terminal-placeholder">
-                    Terminal will be rendered here (T2.3)
-                </div>
+                <div id="terminal"></div>
             </div>
         </div>
 
@@ -40,6 +39,8 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="js/terminal.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js');
