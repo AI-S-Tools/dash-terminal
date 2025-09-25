@@ -26,23 +26,8 @@
             <div class="window-add">+</div>
         </div>
 
-        <!-- Container Selection (shows before terminal) -->
-        <div class="container-selection" id="container-selection">
-            <div class="container-header">
-                <h3>🐳 Select Container</h3>
-                <p>Choose a container to start your terminal session</p>
-            </div>
-            <div class="container-list" id="container-list">
-                <!-- Containers will be populated by JavaScript -->
-                <div class="container-loading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading containers...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Level 3: Pane Grid (hidden until container selected) -->
-        <div class="pane-container" id="pane-container" style="display: none;">
+        <!-- Level 3: Pane Grid -->
+        <div class="pane-container">
             <div class="pane active">
                 <div id="terminal"></div>
             </div>

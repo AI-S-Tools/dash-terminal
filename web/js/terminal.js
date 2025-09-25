@@ -127,8 +127,17 @@ class DashTerminal {
             const status = container.status === 'running' ? '🟢' : '🔴';
             this.terminal.write(`  ${status} ${container.name} (${container.status})\r\n`);
         });
-        this.terminal.write('\r\n💡 Type container name to connect (T2.4 will implement)\r\n');
-        this.terminal.write('$ ');
+
+        // Auto-connect to first running container
+        const runningContainers = containers.filter(c => c.status === 'running');
+        if (runningContainers.length > 0) {
+            const firstContainer = runningContainers[0];
+            this.terminal.write(`\r\n🔄 Auto-connecting to ${firstContainer.name}...\r\n`);
+            this.connectToContainer(firstContainer.name);
+        } else {
+            this.terminal.write('\r\n❌ No running containers found\r\n');
+            this.terminal.write('💡 Start a container to use the terminal\r\n');
+        }
     }
 
     handleContainerInfo(container) {
@@ -185,6 +194,19 @@ class DashTerminal {
     updateStatus(status, message) {
         this.statusIndicator.className = `status-indicator ${status}`;
         this.statusIndicator.textContent = message;
+    }
+
+    // Connect to a specific container
+    connectToContainer(containerName) {
+        const message = {
+            type: 'container_select',
+            payload: {
+                container_name: containerName
+            }
+        };
+
+        console.log('Connecting to container:', containerName);
+        this.websocket.send(JSON.stringify(message));
     }
 
     // Resize terminal
