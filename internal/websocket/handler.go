@@ -1,10 +1,12 @@
 package websocket
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"lxc-terminal/internal/lxc"
 )
 
 var upgrader = websocket.Upgrader{
@@ -17,12 +19,14 @@ var upgrader = websocket.Upgrader{
 // Handler manages WebSocket connections
 type Handler struct {
 	connections map[*websocket.Conn]bool
+	lxcManager  *lxc.Manager
 }
 
 // NewHandler creates a new WebSocket handler
 func NewHandler() *Handler {
 	return &Handler{
 		connections: make(map[*websocket.Conn]bool),
+		lxcManager:  lxc.NewManager(),
 	}
 }
 
@@ -97,6 +101,12 @@ func (h *Handler) handleMessage(conn *websocket.Conn, msg *Message) {
 		h.handleTerminalInput(conn, msg)
 	case MessageTypeTerminalResize:
 		h.handleTerminalResize(conn, msg)
+	case MessageTypeContainerList:
+		h.handleContainerList(conn)
+	case MessageTypeContainerSelect:
+		h.handleContainerSelect(conn, msg)
+	case MessageTypeContainerInfo:
+		h.handleContainerInfo(conn, msg)
 	default:
 		h.sendError(conn, 400, "Unknown message type: "+msg.Type)
 	}
@@ -180,6 +190,87 @@ func (h *Handler) handleTerminalInput(conn *websocket.Conn, msg *Message) {
 func (h *Handler) handleTerminalResize(conn *websocket.Conn, msg *Message) {
 	// TODO: T2.3 will implement terminal resize handling
 	h.sendError(conn, 501, "Terminal resize not yet implemented")
+}
+
+// LXC container handlers
+
+// handleContainerList handles container list requests
+func (h *Handler) handleContainerList(conn *websocket.Conn) {
+	containers, err := h.lxcManager.ListContainers()
+	if err != nil {
+		h.sendError(conn, 500, "Failed to list containers: "+err.Error())
+		return
+	}
+
+	response := Message{
+		Type:    MessageTypeContainerList,
+		Payload: containers,
+	}
+	conn.WriteJSON(response)
+}
+
+// handleContainerSelect handles container selection requests
+func (h *Handler) handleContainerSelect(conn *websocket.Conn, msg *Message) {
+	var selectMsg ContainerSelectMessage
+	if err := h.parseMessagePayload(msg, &selectMsg); err != nil {
+		h.sendError(conn, 400, "Invalid container select message: "+err.Error())
+		return
+	}
+
+	// Check if container exists and is running
+	running, err := h.lxcManager.IsContainerRunning(selectMsg.ContainerName)
+	if err != nil {
+		h.sendError(conn, 404, "Container not found: "+selectMsg.ContainerName)
+		return
+	}
+
+	if !running {
+		h.sendError(conn, 400, "Container is not running: "+selectMsg.ContainerName)
+		return
+	}
+
+	// For T2.2, we just confirm selection is valid
+	// Actual connection will be handled in T2.3/T2.4
+	response := Message{
+		Type: MessageTypeStatus,
+		Payload: StatusMessage{
+			Connected: true,
+			Message:   "Container " + selectMsg.ContainerName + " selected successfully",
+		},
+	}
+	conn.WriteJSON(response)
+}
+
+// handleContainerInfo handles container info requests
+func (h *Handler) handleContainerInfo(conn *websocket.Conn, msg *Message) {
+	var infoMsg ContainerInfoMessage
+	if err := h.parseMessagePayload(msg, &infoMsg); err != nil {
+		h.sendError(conn, 400, "Invalid container info message: "+err.Error())
+		return
+	}
+
+	container, err := h.lxcManager.GetContainer(infoMsg.ContainerName)
+	if err != nil {
+		h.sendError(conn, 404, "Container not found: "+infoMsg.ContainerName)
+		return
+	}
+
+	response := Message{
+		Type:    MessageTypeContainerInfo,
+		Payload: container,
+	}
+	conn.WriteJSON(response)
+}
+
+// parseMessagePayload parses message payload into target struct
+func (h *Handler) parseMessagePayload(msg *Message, target interface{}) error {
+	// Convert payload to JSON and back to parse into struct
+	// This handles the interface{} -> specific struct conversion
+	payloadBytes, err := json.Marshal(msg.Payload)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(payloadBytes, target)
 }
 
 // sendError sends an error message to the client

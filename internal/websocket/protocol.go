@@ -27,6 +27,11 @@ const (
 	MessageTypeDisconnect = "disconnect"
 	MessageTypeStatus     = "status"
 
+	// LXC container management
+	MessageTypeContainerList   = "container_list"
+	MessageTypeContainerSelect = "container_select"
+	MessageTypeContainerInfo   = "container_info"
+
 	// Error handling
 	MessageTypeError = "error"
 )
@@ -81,4 +86,14 @@ type ErrorMessage struct {
 type StatusMessage struct {
 	Connected bool   `json:"connected"`
 	Message   string `json:"message"`
+}
+
+// ContainerSelectMessage represents container selection request
+type ContainerSelectMessage struct {
+	ContainerName string `json:"container_name"`
+}
+
+// ContainerInfoMessage represents container information request
+type ContainerInfoMessage struct {
+	ContainerName string `json:"container_name"`
 }
