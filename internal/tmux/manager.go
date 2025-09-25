@@ -79,8 +79,8 @@ func (m *Manager) CreateSession(name string) error {
 	return cmd.Run()
 }
 
-// listWindows lists all windows in a session
-func (m *Manager) listWindows(sessionName string) ([]Window, error) {
+// ListWindows lists all windows in a session
+func (m *Manager) ListWindows(sessionName string) ([]Window, error) {
 	cmd := m.buildCommand("list-windows", "-t", sessionName, "-F", "#{window_index}:#{window_name}")
 	output, err := cmd.Output()
 
@@ -123,8 +123,8 @@ func (m *Manager) listWindows(sessionName string) ([]Window, error) {
 	return windows, nil
 }
 
-// listPanes lists all panes in a window
-func (m *Manager) listPanes(sessionName string, windowID int) ([]Pane, error) {
+// ListPanes lists all panes in a window
+func (m *Manager) ListPanes(sessionName string, windowID int) ([]Pane, error) {
 	target := fmt.Sprintf("%s:%d", sessionName, windowID)
 	cmd := m.buildCommand("list-panes", "-t", target, "-F", "#{pane_index}:#{?pane_active,1,0}:#{pane_width}:#{pane_height}")
 	output, err := cmd.Output()

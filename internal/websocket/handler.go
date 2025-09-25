@@ -244,27 +244,244 @@ func (h *Handler) handleSessionSelect(client *Client, msg *Message) {
 }
 
 func (h *Handler) handleWindowList(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	h.mutex.RLock()
+	containerName := client.containerName
+	sessionID := client.sessionID
+	h.mutex.RUnlock()
+
+	if containerName == "" || sessionID == "" {
+		h.sendError(client, 400, "container_name and session_id must be set before listing windows")
+		return
+	}
+
+	tmuxManager := tmux.NewManager(containerName)
+	windows, err := tmuxManager.ListWindows(sessionID)
+	if err != nil {
+		h.sendError(client, 500, "Failed to list tmux windows: "+err.Error())
+		return
+	}
+
+	wsWindows := make([]Window, len(windows))
+	for i, w := range windows {
+		wsWindows[i] = Window{ID: strconv.Itoa(w.ID), Name: w.Name, SessionID: sessionID}
+	}
+
+	response := Message{Type: MessageTypeWindowList, Payload: wsWindows}
+	client.conn.WriteJSON(response)
 }
 
 func (h *Handler) handleWindowCreate(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	var payload struct {
+		WindowName string `json:"window_name"`
+	}
+	if err := parsePayload(msg.Payload, &payload); err != nil {
+		h.sendError(client, 400, "Invalid window create payload: "+err.Error())
+		return
+	}
+
+	if payload.WindowName == "" {
+		h.sendError(client, 400, "window_name is required")
+		return
+	}
+
+	h.mutex.RLock()
+	containerName := client.containerName
+	sessionID := client.sessionID
+	h.mutex.RUnlock()
+
+	if containerName == "" || sessionID == "" {
+		h.sendError(client, 400, "container_name and session_id must be set before creating a window")
+		return
+	}
+
+	tmuxManager := tmux.NewManager(containerName)
+	err := tmuxManager.CreateWindow(sessionID, payload.WindowName)
+	if err != nil {
+		h.sendError(client, 500, "Failed to create tmux window: "+err.Error())
+		return
+	}
+
+	response := Message{Type: MessageTypeStatus, Payload: StatusMessage{Connected: true, Message: "Window created: " + payload.WindowName}}
+	client.conn.WriteJSON(response)
 }
 
 func (h *Handler) handleWindowSelect(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	var payload struct {
+		WindowID string `json:"window_id"`
+	}
+	if err := parsePayload(msg.Payload, &payload); err != nil {
+		h.sendError(client, 400, "Invalid window select payload: "+err.Error())
+		return
+	}
+
+	if payload.WindowID == "" {
+		h.sendError(client, 400, "window_id is required")
+		return
+	}
+
+	windowID, err := strconv.Atoi(payload.WindowID)
+	if err != nil {
+		h.sendError(client, 400, "Invalid window_id format")
+		return
+	}
+
+	h.mutex.RLock()
+	containerName := client.containerName
+	sessionID := client.sessionID
+	h.mutex.RUnlock()
+
+	if containerName == "" || sessionID == "" {
+		h.sendError(client, 400, "container_name and session_id must be set before selecting a window")
+		return
+	}
+
+	tmuxManager := tmux.NewManager(containerName)
+	err = tmuxManager.SelectWindow(sessionID, windowID)
+	if err != nil {
+		h.sendError(client, 500, "Failed to select tmux window: "+err.Error())
+		return
+	}
+
+	response := Message{Type: MessageTypeStatus, Payload: StatusMessage{Connected: true, Message: "Window selected: " + payload.WindowID}}
+	client.conn.WriteJSON(response)
 }
 
 func (h *Handler) handlePaneList(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	var payload struct {
+		WindowID string `json:"window_id"`
+	}
+	if err := parsePayload(msg.Payload, &payload); err != nil {
+		h.sendError(client, 400, "Invalid pane list payload: "+err.Error())
+		return
+	}
+
+	if payload.WindowID == "" {
+		h.sendError(client, 400, "window_id is required")
+		return
+	}
+
+	windowID, err := strconv.Atoi(payload.WindowID)
+	if err != nil {
+		h.sendError(client, 400, "Invalid window_id format")
+		return
+	}
+
+	h.mutex.RLock()
+	containerName := client.containerName
+	sessionID := client.sessionID
+	h.mutex.RUnlock()
+
+	if containerName == "" || sessionID == "" {
+		h.sendError(client, 400, "container_name and session_id must be set before listing panes")
+		return
+	}
+
+	tmuxManager := tmux.NewManager(containerName)
+	panes, err := tmuxManager.ListPanes(sessionID, windowID)
+	if err != nil {
+		h.sendError(client, 500, "Failed to list tmux panes: "+err.Error())
+		return
+	}
+
+	wsPanes := make([]Pane, len(panes))
+	for i, p := range panes {
+		wsPanes[i] = Pane{ID: strconv.Itoa(p.ID), WindowID: payload.WindowID, Width: p.Width, Height: p.Height}
+	}
+
+	response := Message{Type: MessageTypePaneList, Payload: wsPanes}
+	client.conn.WriteJSON(response)
 }
 
 func (h *Handler) handlePaneCreate(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	var payload struct {
+		WindowID string `json:"window_id"`
+	}
+	if err := parsePayload(msg.Payload, &payload); err != nil {
+		h.sendError(client, 400, "Invalid pane create payload: "+err.Error())
+		return
+	}
+
+	if payload.WindowID == "" {
+		h.sendError(client, 400, "window_id is required")
+		return
+	}
+
+	windowID, err := strconv.Atoi(payload.WindowID)
+	if err != nil {
+		h.sendError(client, 400, "Invalid window_id format")
+		return
+	}
+
+	h.mutex.RLock()
+	containerName := client.containerName
+	sessionID := client.sessionID
+	h.mutex.RUnlock()
+
+	if containerName == "" || sessionID == "" {
+		h.sendError(client, 400, "container_name and session_id must be set before creating a pane")
+		return
+	}
+
+	tmuxManager := tmux.NewManager(containerName)
+	err = tmuxManager.CreatePane(sessionID, windowID)
+	if err != nil {
+		h.sendError(client, 500, "Failed to create tmux pane: "+err.Error())
+		return
+	}
+
+	response := Message{Type: MessageTypeStatus, Payload: StatusMessage{Connected: true, Message: "Pane created in window: " + payload.WindowID}}
+	client.conn.WriteJSON(response)
 }
 
 func (h *Handler) handlePaneSelect(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	var payload struct {
+		PaneID string `json:"pane_id"`
+	}
+	if err := parsePayload(msg.Payload, &payload); err != nil {
+		h.sendError(client, 400, "Invalid pane select payload: "+err.Error())
+		return
+	}
+
+	if payload.PaneID == "" {
+		h.sendError(client, 400, "pane_id is required")
+		return
+	}
+
+	parts := strings.Split(payload.PaneID, ".")
+	if len(parts) != 2 {
+		h.sendError(client, 400, "Invalid pane_id format. Expected windowID.paneID")
+		return
+	}
+	windowID, err := strconv.Atoi(parts[0])
+	if err != nil {
+		h.sendError(client, 400, "Invalid windowID in pane_id")
+		return
+	}
+	paneID, err := strconv.Atoi(parts[1])
+	if err != nil {
+		h.sendError(client, 400, "Invalid paneID in pane_id")
+		return
+	}
+
+	h.mutex.RLock()
+	containerName := client.containerName
+	sessionID := client.sessionID
+	h.mutex.RUnlock()
+
+	if containerName == "" || sessionID == "" {
+		h.sendError(client, 400, "container_name and session_id must be set before selecting a pane")
+		return
+	}
+
+	tmuxManager := tmux.NewManager(containerName)
+	err = tmuxManager.SelectPane(sessionID, windowID, paneID)
+	if err != nil {
+		h.sendError(client, 500, "Failed to select tmux pane: "+err.Error())
+		return
+	}
+
+	response := Message{Type: MessageTypeStatus, Payload: StatusMessage{Connected: true, Message: "Pane selected: " + payload.PaneID}}
+	client.conn.WriteJSON(response)
 }
 
 func (h *Handler) handleTerminalInput(client *Client, msg *Message) {
@@ -352,11 +569,31 @@ func (h *Handler) handleTerminalResize(client *Client, msg *Message) {
 }
 
 func (h *Handler) handleContainerSelect(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	// Container selection is handled by sending a session_list message
+	// with the desired container_name. This sets the container context for the client.
+	h.sendError(client, 501, "Message type '"+msg.Type+"' is deprecated. Use 'session_list'.")
 }
 
 func (h *Handler) handleContainerInfo(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	var payload ContainerInfoMessage
+	if err := parsePayload(msg.Payload, &payload); err != nil {
+		h.sendError(client, 400, "Invalid container info payload: "+err.Error())
+		return
+	}
+
+	if payload.ContainerName == "" {
+		h.sendError(client, 400, "container_name is required")
+		return
+	}
+
+	container, err := h.lxcManager.GetContainer(payload.ContainerName)
+	if err != nil {
+		h.sendError(client, 500, "Failed to get container info: "+err.Error())
+		return
+	}
+
+	response := Message{Type: MessageTypeContainerInfo, Payload: container}
+	client.conn.WriteJSON(response)
 }
 
 
