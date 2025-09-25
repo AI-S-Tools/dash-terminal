@@ -1,0 +1,7 @@
+id: p2-core-functionality
+name: 'P2: Core Functionality'
+project_id: dash-terminal
+status: planning
+created: "2025-09-25"
+updated: "2025-09-25"
+goal: WebSocket server, LXC integration, terminal wrapper, and tmux manager

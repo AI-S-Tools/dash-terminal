@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -171,11 +173,74 @@ func (h *Handler) handleSessionList(client *Client, msg *Message) {
 }
 
 func (h *Handler) handleSessionCreate(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	var payload struct {
+		SessionName string `json:"session_name"`
+	}
+	if err := parsePayload(msg.Payload, &payload); err != nil {
+		h.sendError(client, 400, "Invalid session create payload: "+err.Error())
+		return
+	}
+
+	if payload.SessionName == "" {
+		h.sendError(client, 400, "session_name is required")
+		return
+	}
+
+	h.mutex.RLock()
+	containerName := client.containerName
+	h.mutex.RUnlock()
+
+	if containerName == "" {
+		h.sendError(client, 400, "container_name must be set before creating a session")
+		return
+	}
+
+	tmuxManager := tmux.NewManager(containerName)
+	err := tmuxManager.CreateSession(payload.SessionName)
+	if err != nil {
+		h.sendError(client, 500, "Failed to create tmux session: "+err.Error())
+		return
+	}
+
+	response := Message{Type: MessageTypeStatus, Payload: StatusMessage{Connected: true, Message: "Session created: " + payload.SessionName}}
+	client.conn.WriteJSON(response)
 }
 
 func (h *Handler) handleSessionSelect(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	var payload struct {
+		SessionID string `json:"session_id"`
+	}
+	if err := parsePayload(msg.Payload, &payload); err != nil {
+		h.sendError(client, 400, "Invalid session select payload: "+err.Error())
+		return
+	}
+
+	if payload.SessionID == "" {
+		h.sendError(client, 400, "session_id is required")
+		return
+	}
+
+	h.mutex.Lock()
+	if client.containerName == "" {
+		h.mutex.Unlock()
+		h.sendError(client, 400, "container_name must be set before selecting a session")
+		return
+	}
+	client.sessionID = payload.SessionID
+	containerName := client.containerName
+	h.mutex.Unlock()
+
+	tmuxManager := tmux.NewManager(containerName)
+	err := tmuxManager.SelectSession(payload.SessionID)
+	if err != nil {
+		h.sendError(client, 500, "Failed to select tmux session: "+err.Error())
+		return
+	}
+
+	// For now, just send a success status.
+	// In a later task, this will involve creating a PTY and forwarding I/O.
+	response := Message{Type: MessageTypeStatus, Payload: StatusMessage{Connected: true, Message: "Session selected: " + payload.SessionID}}
+	client.conn.WriteJSON(response)
 }
 
 func (h *Handler) handleWindowList(client *Client, msg *Message) {
@@ -203,11 +268,87 @@ func (h *Handler) handlePaneSelect(client *Client, msg *Message) {
 }
 
 func (h *Handler) handleTerminalInput(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	var payload TerminalInput
+	if err := parsePayload(msg.Payload, &payload); err != nil {
+		h.sendError(client, 400, "Invalid terminal input payload: "+err.Error())
+		return
+	}
+
+	h.mutex.RLock()
+	containerName := client.containerName
+	sessionID := client.sessionID
+	h.mutex.RUnlock()
+
+	if containerName == "" || sessionID == "" {
+		h.sendError(client, 400, "container_name and session_id must be set before sending terminal input")
+		return
+	}
+
+	// Assuming paneID is in the format "windowID.paneID"
+	parts := strings.Split(payload.PaneID, ".")
+	if len(parts) != 2 {
+		h.sendError(client, 400, "Invalid pane_id format. Expected windowID.paneID")
+		return
+	}
+	windowID, err := strconv.Atoi(parts[0])
+	if err != nil {
+		h.sendError(client, 400, "Invalid windowID in pane_id")
+		return
+	}
+	paneID, err := strconv.Atoi(parts[1])
+	if err != nil {
+		h.sendError(client, 400, "Invalid paneID in pane_id")
+		return
+	}
+
+	tmuxManager := tmux.NewManager(containerName)
+	err = tmuxManager.SendKeys(sessionID, windowID, paneID, payload.Data)
+	if err != nil {
+		h.sendError(client, 500, "Failed to send keys to tmux: "+err.Error())
+		return
+	}
 }
 
 func (h *Handler) handleTerminalResize(client *Client, msg *Message) {
-	h.sendError(client, 501, "Message type '"+msg.Type+"' not yet implemented.")
+	var payload TerminalResize
+	if err := parsePayload(msg.Payload, &payload); err != nil {
+		h.sendError(client, 400, "Invalid terminal resize payload: "+err.Error())
+		return
+	}
+
+	h.mutex.RLock()
+	containerName := client.containerName
+	sessionID := client.sessionID
+	h.mutex.RUnlock()
+
+	if containerName == "" || sessionID == "" {
+		h.sendError(client, 400, "container_name and session_id must be set before resizing terminal")
+		return
+	}
+
+	// Assuming paneID is in the format "windowID.paneID"
+	parts := strings.Split(payload.PaneID, ".")
+	if len(parts) != 2 {
+		h.sendError(client, 400, "Invalid pane_id format. Expected windowID.paneID")
+		return
+	}
+	windowID, err := strconv.Atoi(parts[0])
+	if err != nil {
+		h.sendError(client, 400, "Invalid windowID in pane_id")
+		return
+	}
+	paneID, err := strconv.Atoi(parts[1])
+	if err != nil {
+		h.sendError(client, 400, "Invalid paneID in pane_id")
+		return
+	}
+
+	tmuxManager := tmux.NewManager(containerName)
+	err = tmuxManager.ResizePane(sessionID, windowID, paneID, payload.Width, payload.Height)
+	if err != nil {
+		h.sendError(client, 500, "Failed to resize tmux pane: "+err.Error())
+		return
+	}
 }
 
 func (h *Handler) handleContainerSelect(client *Client, msg *Message) {

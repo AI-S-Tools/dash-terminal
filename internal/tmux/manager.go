@@ -206,6 +206,13 @@ func (m *Manager) SendKeys(sessionName string, windowID, paneID int, keys string
 	return cmd.Run()
 }
 
+// ResizePane resizes a tmux pane
+func (m *Manager) ResizePane(sessionName string, windowID, paneID, width, height int) error {
+	target := fmt.Sprintf("%s:%d.%d", sessionName, windowID, paneID)
+	cmd := m.buildCommand("resize-pane", "-t", target, "-x", strconv.Itoa(width), "-y", strconv.Itoa(height))
+	return cmd.Run()
+}
+
 // buildCommand builds a tmux command, optionally executing in a container
 func (m *Manager) buildCommand(args ...string) *exec.Cmd {
 	if m.containerName != "" {
