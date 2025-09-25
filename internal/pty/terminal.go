@@ -36,14 +36,14 @@ func (t *Terminal) StartSession(sessionID, containerName, command string) (*Sess
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 
-	// Create command - use lxc exec for container execution
+	// Create command - handle host vs container execution
 	var cmd *exec.Cmd
-	if containerName != "" {
-		// Execute command inside LXC container
-		cmd = exec.Command("lxc", "exec", containerName, "--", "bash", "-c", command)
+	if containerName == "" || containerName == "host" {
+		// Execute command on host (real terminal)
+		cmd = exec.Command("bash")
 	} else {
-		// Execute command on host
-		cmd = exec.Command("bash", "-c", command)
+		// Execute command inside LXC container
+		cmd = exec.Command("lxc", "exec", containerName, "--", "bash")
 	}
 
 	// Start PTY

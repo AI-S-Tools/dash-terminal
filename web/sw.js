@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lxc-terminal-v3'; // Updated for window-tabs.js T3.2
+const CACHE_NAME = 'lxc-terminal-v4'; // Updated for terminal connection fix
 const urlsToCache = [
   '/',
   '/css/tmux-ui.css',

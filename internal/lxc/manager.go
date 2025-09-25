@@ -56,12 +56,19 @@ func (m *Manager) ListContainers() ([]Container, error) {
 		})
 	}
 
-	// If no containers found, return mock containers for development
+	// If no containers found, return host terminal option for real terminal access
 	if len(containers) == 0 {
-		return m.getMockContainers(), nil
+		return m.getHostTerminalContainer(), nil
 	}
 
 	return containers, nil
+}
+
+// getHostTerminalContainer returns host terminal as a "container" option
+func (m *Manager) getHostTerminalContainer() []Container {
+	return []Container{
+		{Name: "host", Status: "running", Type: "host"},
+	}
 }
 
 // getMockContainers returns mock containers for development/testing
