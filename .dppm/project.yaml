@@ -60,6 +60,23 @@ scripts:
   test: "go test ./..."
   lint: "gofmt -l . && go vet ./..."
 
+# 🔒 TAILSCALE HTTPS SETUP
+tailscale:
+  domain: developer-dash.tail2d448.ts.net
+  https_url: https://developer-dash.tail2d448.ts.net
+  certificates:
+    public: developer-dash.tail2d448.ts.net.crt
+    private: developer-dash.tail2d448.ts.net.key
+  testing_urls:
+    - https://developer-dash.tail2d448.ts.net
+    - https://developer-dash (short form)
+
+# 📋 ALL TASK VERIFICATION MUST USE TAILSCALE HTTPS
+verification_endpoints:
+  base_url: "https://developer-dash.tail2d448.ts.net"
+  pwa_test: "https://developer-dash.tail2d448.ts.net"
+  websocket: "wss://developer-dash.tail2d448.ts.net/ws"
+
 target_structure:
   cmd/server/main.go: Go HTTP server entry point
   internal/:
