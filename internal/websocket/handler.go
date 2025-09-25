@@ -2,11 +2,15 @@ package websocket
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 	"lxc-terminal/internal/lxc"
+	"lxc-terminal/internal/pty"
+	"lxc-terminal/internal/tmux"
 )
 
 var upgrader = websocket.Upgrader{
@@ -18,15 +22,22 @@ var upgrader = websocket.Upgrader{
 
 // Handler manages WebSocket connections
 type Handler struct {
-	connections map[*websocket.Conn]bool
-	lxcManager  *lxc.Manager
+	connections       map[*websocket.Conn]bool
+	lxcManager        *lxc.Manager
+	ptyTerminal       *pty.Terminal
+	tmuxManagers      map[string]*tmux.Manager // containerName -> tmux manager
+	activeSessions    map[*websocket.Conn]string // conn -> sessionID
+	mutex             sync.RWMutex
 }
 
 // NewHandler creates a new WebSocket handler
 func NewHandler() *Handler {
 	return &Handler{
-		connections: make(map[*websocket.Conn]bool),
-		lxcManager:  lxc.NewManager(),
+		connections:    make(map[*websocket.Conn]bool),
+		lxcManager:     lxc.NewManager(),
+		ptyTerminal:    pty.NewTerminal(),
+		tmuxManagers:   make(map[string]*tmux.Manager),
+		activeSessions: make(map[*websocket.Conn]string),
 	}
 }
 
@@ -42,7 +53,19 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// Register connection
 	h.connections[conn] = true
-	defer delete(h.connections, conn)
+	defer func() {
+		delete(h.connections, conn)
+
+		// Clean up active session for this connection
+		h.mutex.Lock()
+		if sessionID, exists := h.activeSessions[conn]; exists {
+			if session, ok := h.ptyTerminal.GetSession(sessionID); ok {
+				session.Close()
+			}
+			delete(h.activeSessions, conn)
+		}
+		h.mutex.Unlock()
+	}()
 
 	// Send connection status
 	statusMsg := Message{
