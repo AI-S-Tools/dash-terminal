@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"net/http"
 )
 
