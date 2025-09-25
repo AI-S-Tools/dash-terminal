@@ -5,12 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LXC Terminal PWA</title>
     <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/tmux-ui.css">
     <meta name="theme-color" content="#1a1a1a">
     <link rel="icon" href="assets/icons/icon-192x192.png">
 </head>
 <body>
-    <h1>LXC Terminal PWA - Ready for Installation</h1>
-    <p>PWA foundation complete. Terminal functionality coming in T2.3.</p>
+    <div class="terminal-app">
+        <!-- Level 1: Session Tabs -->
+        <div class="session-tabs">
+            <div class="session-tab active">Session 1</div>
+            <div class="session-tab">Session 2</div>
+            <div class="session-add">+</div>
+        </div>
+
+        <!-- Level 2: Window Tabs -->
+        <div class="window-tabs">
+            <div class="window-tab active">bash</div>
+            <div class="window-tab">htop</div>
+            <div class="window-add">+</div>
+        </div>
+
+        <!-- Level 3: Pane Grid -->
+        <div class="pane-container">
+            <div class="pane active">
+                <div class="terminal-placeholder">
+                    Terminal will be rendered here (T2.3)
+                </div>
+            </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="status-bar">
+            <span class="status-indicator disconnected">Disconnected</span>
+        </div>
+    </div>
 
     <script>
         if ('serviceWorker' in navigator) {
