@@ -143,18 +143,28 @@ class SessionTabs {
         // Enable smooth scrolling for tab overflow
         sessionTabsContainer.style.scrollBehavior = 'smooth';
 
-        // Add touch feedback
+        // Add touch feedback with preventDefault to avoid iOS click issues
         sessionTabsContainer.addEventListener('touchstart', (e) => {
             if (e.target.classList.contains('session-tab') || e.target.classList.contains('session-add')) {
                 e.target.style.opacity = '0.7';
+                console.log('TouchStart on:', e.target.textContent);
             }
-        });
+        }, { passive: false });
 
         sessionTabsContainer.addEventListener('touchend', (e) => {
             if (e.target.classList.contains('session-tab') || e.target.classList.contains('session-add')) {
                 e.target.style.opacity = '1';
+                console.log('TouchEnd on:', e.target.textContent);
+
+                // Trigger click manually on iOS
+                setTimeout(() => {
+                    e.target.click();
+                }, 10);
             }
-        });
+        }, { passive: false });
+
+        // iOS Safari specific - prevent double tap zoom
+        sessionTabsContainer.style.touchAction = 'manipulation';
 
         console.log('SessionTabs: Mobile optimizations enabled');
     }
