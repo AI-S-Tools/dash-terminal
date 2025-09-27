@@ -3,45 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LXC Terminal PWA</title>
+    <title>Dash Terminal</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="css/tmux-ui.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
     <meta name="theme-color" content="#1a1a1a">
     <link rel="icon" href="assets/icons/icon-192x192.png">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #1a1a1a;
+        }
+        #terminal-container {
+            width: 100%;
+            height: calc(100% - 20px);
+        }
+        .status-bar {
+            height: 20px;
+            background-color: #333;
+            color: white;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 20px;
+            padding: 0 10px;
+        }
+        .status-indicator.disconnected {
+            color: red;
+        }
+        .status-indicator.connected {
+            color: green;
+        }
+    </style>
 </head>
 <body>
-    <div class="terminal-app">
-        <!-- Level 1: Session Tabs -->
-        <div class="session-tabs">
-            <div class="session-tab active">Session 1</div>
-            <div class="session-tab">Session 2</div>
-            <div class="session-add">+</div>
-        </div>
+    <div id="terminal-container"></div>
 
-        <!-- Level 2: Window Tabs -->
-        <div class="window-tabs">
-            <div class="window-tab active">bash</div>
-            <div class="window-tab">htop</div>
-            <div class="window-add">+</div>
-        </div>
-
-        <!-- Level 3: Pane Grid -->
-        <div class="pane-container">
-            <div class="pane active">
-                <div id="terminal"></div>
-            </div>
-        </div>
-
-        <!-- Connection Status -->
-        <div class="status-bar">
-            <span class="status-indicator disconnected">Disconnected</span>
-        </div>
+    <div class="status-bar">
+        <select id="container-select"></select>
+        <span id="status-indicator" class="status-indicator disconnected">Disconnected</span>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
-    <script src="js/session-tabs.js"></script>
-    <script src="js/window-tabs.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
     <script src="js/terminal.js"></script>
     <script>
         if ('serviceWorker' in navigator) {

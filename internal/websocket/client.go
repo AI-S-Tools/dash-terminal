@@ -10,7 +10,6 @@ import (
 type Client struct {
 	Conn          *websocket.Conn
 	ContainerName string
-	TmuxSession   string
 }
 
 // ClientManager manages all active WebSocket clients

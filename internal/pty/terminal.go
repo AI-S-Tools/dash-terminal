@@ -9,66 +9,35 @@ import (
 	"github.com/creack/pty"
 )
 
-// Terminal handles PTY (pseudo-terminal) operations
-type Terminal struct {
-	sessions map[string]*Session
-	mutex    sync.RWMutex
-}
-
 // Session represents a PTY session
 type Session struct {
-	ID      string
-	PTY     *os.File
-	Command *exec.Cmd
-	Running bool
+	pty     *os.File
+	command *exec.Cmd
+	running bool
 	mutex   sync.RWMutex
 }
 
-// NewTerminal creates a new terminal manager
-func NewTerminal() *Terminal {
-	return &Terminal{
-		sessions: make(map[string]*Session),
-	}
-}
-
-// StartSession starts a new PTY session with given command
-func (t *Terminal) StartSession(sessionID, containerName, command string) (*Session, error) {
-	t.mutex.Lock()
-	defer t.mutex.Unlock()
-
-	// Create command - handle host vs container execution
+// NewSession starts a new PTY session with a shell inside the specified container.
+func NewSession(containerName string) (*Session, error) {
 	var cmd *exec.Cmd
 	if containerName == "" || containerName == "host" {
-		// Execute command on host (real terminal)
 		cmd = exec.Command("bash")
 	} else {
-		// Execute command inside LXC container
 		cmd = exec.Command("lxc", "exec", containerName, "--", "bash")
 	}
 
-	// Start PTY
 	pttyFile, err := pty.Start(cmd)
 	if err != nil {
 		return nil, err
 	}
 
 	session := &Session{
-		ID:      sessionID,
-		PTY:     pttyFile,
-		Command: cmd,
-		Running: true,
+		pty:     pttyFile,
+		command: cmd,
+		running: true,
 	}
 
-	t.sessions[sessionID] = session
 	return session, nil
-}
-
-// GetSession returns a session by ID
-func (t *Terminal) GetSession(sessionID string) (*Session, bool) {
-	t.mutex.RLock()
-	defer t.mutex.RUnlock()
-	session, exists := t.sessions[sessionID]
-	return session, exists
 }
 
 // Write writes data to the PTY session
@@ -76,11 +45,11 @@ func (s *Session) Write(data []byte) (int, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	if !s.Running || s.PTY == nil {
+	if !s.running || s.pty == nil {
 		return 0, io.EOF
 	}
 
-	return s.PTY.Write(data)
+	return s.pty.Write(data)
 }
 
 // Read reads data from the PTY session
@@ -88,11 +57,11 @@ func (s *Session) Read(buffer []byte) (int, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	if !s.Running || s.PTY == nil {
+	if !s.running || s.pty == nil {
 		return 0, io.EOF
 	}
 
-	return s.PTY.Read(buffer)
+	return s.pty.Read(buffer)
 }
 
 // Close closes the PTY session
@@ -100,41 +69,34 @@ func (s *Session) Close() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	if !s.Running {
+	if !s.running {
 		return nil
 	}
 
-	s.Running = false
+	s.running = false
 
-	if s.PTY != nil {
-		s.PTY.Close()
+	if s.pty != nil {
+		s.pty.Close()
 	}
 
-	if s.Command != nil && s.Command.Process != nil {
-		s.Command.Process.Kill()
+	if s.command != nil && s.command.Process != nil {
+		s.command.Process.Kill()
 	}
 
 	return nil
 }
 
 // Resize resizes the PTY terminal
-func (s *Session) Resize(cols, rows int) error {
+func (s *Session) Resize(width, height int) error {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	if !s.Running || s.PTY == nil {
+	if !s.running || s.pty == nil {
 		return io.EOF
 	}
 
-	return pty.Setsize(s.PTY, &pty.Winsize{
-		Rows: uint16(rows),
-		Cols: uint16(cols),
+	return pty.Setsize(s.pty, &pty.Winsize{
+		Rows: uint16(height),
+		Cols: uint16(width),
 	})
-}
-
-// IsRunning returns whether the session is still running
-func (s *Session) IsRunning() bool {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-	return s.Running
 }

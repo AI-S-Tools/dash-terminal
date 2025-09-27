@@ -3,28 +3,23 @@
 
 ## Project Overview
 
-`dash-terminal` is a web-based Progressive Web App (PWA) designed to provide a premium terminal experience for managing and interacting with LXC containers. It aims to replicate the elegant simplicity and session management capabilities of tools like SecureShellfish, with a strong focus on a native-app feel for mobile devices.
+`dash-terminal` is a web-based Progressive Web App (PWA) designed to provide a premium terminal experience for managing and interacting with LXC containers. It aims for elegant simplicity with a strong focus on a native-app feel for mobile devices.
 
-The core functionality revolves around providing zero-configuration terminal access to LXC containers and leveraging native `tmux` integration for persistent and structured sessions.
+The core functionality revolves around providing zero-configuration terminal access to LXC containers.
 
 **Key Technologies:**
 
 *   **Backend:** Go
-*   **Frontend:** Vanilla JavaScript, `xterm.js`, and Web Components
+*   **Frontend:** Vanilla JavaScript, `xterm.js`
 *   **Communication:** WebSockets
 *   **Containerization:** LXC
-*   **Session Management:** `tmux`
 
 ## Architecture
 
 The application follows a client-server architecture:
 
-*   A **Go backend** exposes a WebSocket endpoint. This backend is responsible for managing LXC containers (listing, executing commands within them) and handling `tmux` sessions.
+*   A **Go backend** exposes a WebSocket endpoint. This backend is responsible for managing LXC containers (listing, executing commands within them) and handling PTY sessions.
 *   A **JavaScript frontend** provides the user interface. It uses `xterm.js` to render the terminal and communicates with the backend via WebSockets to send commands and receive output.
-*   The UI is structured to mirror `tmux`'s hierarchy:
-    1.  **Session Tabs:** For switching between different `tmux` sessions.
-    2.  **Window Tabs:** For switching between windows within a session.
-    3.  **Panes:** For displaying multiple terminal panes within a window.
 
 ## Building and Running
 
