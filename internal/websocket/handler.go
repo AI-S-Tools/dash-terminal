@@ -17,13 +17,6 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// Client represents a connected WebSocket client and its state
-type Client struct {
-	conn          *websocket.Conn
-	containerName string
-	ptySession    *pty.Session
-}
-
 // Handler manages all WebSocket connections and routes messages
 type Handler struct {
 	clients    map[*websocket.Conn]*Client
@@ -69,7 +62,7 @@ func (h *Handler) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) addClient(conn *websocket.Conn) *Client {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
-	client := &Client{conn: conn}
+	client := &Client{Conn: conn}
 	h.clients[conn] = client
 	return client
 }
@@ -78,10 +71,10 @@ func (h *Handler) addClient(conn *websocket.Conn) *Client {
 func (h *Handler) removeClient(client *Client) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
-	if client.ptySession != nil {
-		client.ptySession.Close()
+	if client.PtySession != nil {
+		client.PtySession.Close()
 	}
-	delete(h.clients, client.conn)
+	delete(h.clients, client.Conn)
 }
 
 // handleMessage is the central router for all incoming messages
@@ -108,7 +101,7 @@ func (h *Handler) handleContainerList(client *Client) {
 		return
 	}
 	response := Message{Type: MessageTypeContainerList, Payload: containers}
-	client.conn.WriteJSON(response)
+	client.Conn.WriteJSON(response)
 }
 
 // handleContainerSelect starts a PTY session in the selected container
@@ -125,7 +118,7 @@ func (h *Handler) handleContainerSelect(client *Client, msg *Message) {
 	}
 
 	h.mutex.Lock()
-	client.containerName = payload.ContainerName
+	client.ContainerName = payload.ContainerName
 	h.mutex.Unlock()
 
 	ptySession, err := pty.NewSession(payload.ContainerName)
@@ -135,7 +128,7 @@ func (h *Handler) handleContainerSelect(client *Client, msg *Message) {
 	}
 
 	h.mutex.Lock()
-	client.ptySession = ptySession
+	client.PtySession = ptySession
 	h.mutex.Unlock()
 
 	go h.streamPtyOutput(client, ptySession)
@@ -154,7 +147,7 @@ func (h *Handler) streamPtyOutput(client *Client, ptySession *pty.Session) {
 		}
 		output := string(buf[:n])
 		response := Message{Type: MessageTypeTerminalOutput, Payload: TerminalOutput{Data: output}}
-		if err := client.conn.WriteJSON(response); err != nil {
+		if err := client.Conn.WriteJSON(response); err != nil {
 			// Client disconnected
 			break
 		}
@@ -169,7 +162,7 @@ func (h *Handler) handleTerminalInput(client *Client, msg *Message) {
 	}
 
 	h.mutex.RLock()
-	ptySession := client.ptySession
+	ptySession := client.PtySession
 	h.mutex.RUnlock()
 
 	if ptySession == nil {
@@ -190,7 +183,7 @@ func (h *Handler) handleTerminalResize(client *Client, msg *Message) {
 	}
 
 	h.mutex.RLock()
-	ptySession := client.ptySession
+	ptySession := client.PtySession
 	h.mutex.RUnlock()
 
 	if ptySession == nil {
@@ -210,7 +203,7 @@ func (h *Handler) sendConnectionStatus(client *Client, connected bool, message s
 		Type:    MessageTypeStatus,
 		Payload: StatusMessage{Connected: connected, Message: message},
 	}
-	client.conn.WriteJSON(statusMsg)
+	client.Conn.WriteJSON(statusMsg)
 }
 
 func (h *Handler) sendError(client *Client, code int, message string) {
@@ -218,7 +211,7 @@ func (h *Handler) sendError(client *Client, code int, message string) {
 		Type:    MessageTypeError,
 		Payload: ErrorMessage{Code: code, Message: message},
 	}
-	client.conn.WriteJSON(errorMsg)
+	client.Conn.WriteJSON(errorMsg)
 }
 
 func parsePayload(payload interface{}, target interface{}) error {

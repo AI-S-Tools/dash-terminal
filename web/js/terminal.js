@@ -163,12 +163,10 @@ class DashTerminal {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // The xterm.js library attaches the Terminal class to window.
-    // We need to wait for it to load.
-    // The FitAddon is also attached to window.
-    // I will use a small timeout to wait for them to load.
-    setTimeout(() => {
-        window.dashTerminal = new DashTerminal();
-    }, 100);
+window.addEventListener('load', () => {
+    if (typeof Terminal === 'undefined' || typeof FitAddon === 'undefined') {
+        console.error('xterm.js or FitAddon not loaded');
+        return;
+    }
+    window.dashTerminal = new DashTerminal();
 });

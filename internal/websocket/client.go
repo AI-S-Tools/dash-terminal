@@ -4,12 +4,14 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"lxc-terminal/internal/pty"
 )
 
 // Client represents a single WebSocket client connection
 type Client struct {
 	Conn          *websocket.Conn
 	ContainerName string
+	PtySession    *pty.Session
 }
 
 // ClientManager manages all active WebSocket clients
@@ -36,7 +38,7 @@ func (m *ClientManager) AddClient(conn *websocket.Conn) *Client {
 }
 
 // RemoveClient removes a client from the manager
-func (m.ClientManager) RemoveClient(conn *websocket.Conn) {
+func (m *ClientManager) RemoveClient(conn *websocket.Conn) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
